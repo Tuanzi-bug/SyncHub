@@ -1,6 +1,6 @@
 server:
-  name: "project-user"
-  addr: "192.168.1.1:9081"
+  name: "project-api"
+  addr: "192.168.1.1:9080"
 zap:
   debugFileName: ".\\logs\\debug\\project-debug.log"
   infoFileName: ".\\logs\\info\\project-info.log"
@@ -8,16 +8,6 @@ zap:
   maxSize: 500,
   maxAge: 28,
   MaxBackups: 3
-redis:
-  host: "192.168.1.3"
-  port: 6379
-  password: ""
-  db: 0
-grpc:
-  addr: "192.168.1.1:9001"
-  name: "user"
-  version: "1.0.0"
-  weight: 2
 etcd:
   addrs:
     - "192.168.1.3:2379"

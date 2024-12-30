@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Tuanzi-bug/SyncHub/common"
+	"github.com/Tuanzi-bug/SyncHub/user/config"
 	"github.com/Tuanzi-bug/SyncHub/user/router"
 	"github.com/gin-gonic/gin"
 )
@@ -9,5 +10,10 @@ import (
 func main() {
 	r := gin.Default()
 	router.InitRouter(r)
-	common.Run(r, "project-user", ":9080")
+	gc := router.RegisterGrpc()
+	stop := func() {
+		gc.Stop()
+	}
+	router.RegisterEtcdServer()
+	common.Run(r, config.AppConfig.ServerConfig.Name, config.AppConfig.ServerConfig.Addr, stop)
 }

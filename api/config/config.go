@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
-	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -16,17 +15,14 @@ type Config struct {
 	GrpcConfig   *GrpcConfig
 	EtcdConfig   *EtcdConfig
 }
-
 type ServerConfig struct {
 	Name string
 	Addr string
 }
 
 type GrpcConfig struct {
-	Name    string
-	Addr    string
-	Version string
-	Weight  int64
+	Name string
+	Addr string
 }
 
 type EtcdConfig struct {
@@ -46,7 +42,6 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.InitZapLog()
-	conf.ReadGrpcConfig()
 	conf.ReadEtcdConfig()
 	return conf
 }
@@ -72,23 +67,6 @@ func (c *Config) ReadServerConfig() {
 	sc.Name = c.viper.GetString("server.name")
 	sc.Addr = c.viper.GetString("server.addr")
 	c.ServerConfig = sc
-}
-
-func (c *Config) ReadGrpcConfig() {
-	gc := &GrpcConfig{}
-	gc.Name = c.viper.GetString("grpc.name")
-	gc.Addr = c.viper.GetString("grpc.addr")
-	gc.Version = c.viper.GetString("grpc.version")
-	gc.Weight = c.viper.GetInt64("grpc.weight")
-	c.GrpcConfig = gc
-}
-
-func (c *Config) ReadRedisConfig() *redis.Options {
-	return &redis.Options{
-		Addr:     c.viper.GetString("redis.host") + ":" + c.viper.GetString("redis.port"),
-		Password: c.viper.GetString("redis.password"),
-		DB:       c.viper.GetInt("redis.db"),
-	}
 }
 
 func (c *Config) ReadEtcdConfig() {

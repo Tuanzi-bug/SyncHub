@@ -14,7 +14,7 @@ type RedisCache struct {
 }
 
 func init() {
-	rdb := redis.NewClient(config.C.ReadRedisConfig())
+	rdb := redis.NewClient(config.AppConfig.ReadRedisConfig())
 	Rc = &RedisCache{
 		rdb: rdb,
 	}
