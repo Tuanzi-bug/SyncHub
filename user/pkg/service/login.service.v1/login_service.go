@@ -6,7 +6,9 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common"
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
 	"github.com/Tuanzi-bug/SyncHub/common/errs"
+	"github.com/Tuanzi-bug/SyncHub/common/jwts"
 	"github.com/Tuanzi-bug/SyncHub/grpc/user/login"
+	"github.com/Tuanzi-bug/SyncHub/user/config"
 	"github.com/Tuanzi-bug/SyncHub/user/internal/dao"
 	"github.com/Tuanzi-bug/SyncHub/user/internal/database"
 	"github.com/Tuanzi-bug/SyncHub/user/internal/database/tran"
@@ -15,9 +17,11 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/user/internal/repo"
 	"github.com/Tuanzi-bug/SyncHub/user/pkg/grpc_errs"
 	"github.com/Tuanzi-bug/SyncHub/user/pkg/model"
+	"github.com/jinzhu/copier"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -136,4 +140,44 @@ func (h *LoginService) Register(ctx context.Context, msg *login.RegisterMessage)
 	})
 
 	return &login.RegisterResponse{}, err
+}
+
+func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*login.LoginResponse, error) {
+	c := context.Background()
+	//1.去数据库查询 账号密码是否正确
+	pwd := encrypts.Md5(msg.Password)
+	mem, err := h.memberRepo.FindMember(c, msg.Account, pwd)
+	if err != nil {
+		zap.L().Error("Login db FindMember error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if mem == nil {
+		return nil, errs.GrpcError(grpc_errs.AccountAndPwdError)
+	}
+	memMsg := &login.MemberMessage{}
+	err = copier.Copy(memMsg, mem)
+	//2.根据用户id查组织
+	orgs, err := h.organizationRepo.FindOrganizationByMemId(c, mem.Id)
+	if err != nil {
+		zap.L().Error("Login db FindMember error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	var orgsMessage []*login.OrganizationMessage
+	err = copier.Copy(&orgsMessage, orgs)
+	//3.用jwt生成token
+	memIdStr := strconv.FormatInt(mem.Id, 10)
+	exp := time.Duration(config.AppConfig.JwtConfig.AccessExp*3600*24) * time.Second
+	rExp := time.Duration(config.AppConfig.JwtConfig.RefreshExp*3600*24) * time.Second
+	token := jwts.CreateToken(memIdStr, exp, config.AppConfig.JwtConfig.AccessSecret, rExp, config.AppConfig.JwtConfig.RefreshSecret)
+	tokenList := &login.TokenMessage{
+		AccessToken:    token.AccessToken,
+		RefreshToken:   token.RefreshToken,
+		AccessTokenExp: token.AccessExp,
+		TokenType:      "bearer",
+	}
+	return &login.LoginResponse{
+		Member:           memMsg,
+		OrganizationList: orgsMessage,
+		TokenList:        tokenList,
+	}, nil
 }
