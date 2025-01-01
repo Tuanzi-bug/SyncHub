@@ -14,6 +14,7 @@ type Config struct {
 	viper        *viper.Viper
 	ServerConfig *ServerConfig
 	GrpcConfig   *GrpcConfig
+	MysqlConfig  *MysqlConfig
 	EtcdConfig   *EtcdConfig
 }
 
@@ -33,12 +34,20 @@ type EtcdConfig struct {
 	Addrs []string
 }
 
+type MysqlConfig struct {
+	Username string
+	Password string
+	Host     string
+	Port     int
+	Db       string
+}
+
 func InitConfig() *Config {
 	conf := &Config{viper: viper.New()}
 	workDir, _ := os.Getwd()
 	conf.viper.SetConfigName("config")
 	conf.viper.SetConfigType("yaml")
-	conf.viper.AddConfigPath("/etc/ms_project/user")
+	conf.viper.AddConfigPath("/etc/ms_project/user_proto")
 	conf.viper.AddConfigPath(workDir + "/config")
 	err := conf.viper.ReadInConfig()
 	if err != nil {
@@ -48,6 +57,7 @@ func InitConfig() *Config {
 	conf.InitZapLog()
 	conf.ReadGrpcConfig()
 	conf.ReadEtcdConfig()
+	conf.InitMysqlConfig()
 	return conf
 }
 
@@ -100,4 +110,15 @@ func (c *Config) ReadEtcdConfig() {
 	}
 	ec.Addrs = addrs
 	c.EtcdConfig = ec
+}
+
+func (c *Config) InitMysqlConfig() {
+	mc := &MysqlConfig{
+		Username: c.viper.GetString("mysql.username"),
+		Password: c.viper.GetString("mysql.password"),
+		Host:     c.viper.GetString("mysql.host"),
+		Port:     c.viper.GetInt("mysql.port"),
+		Db:       c.viper.GetString("mysql.db"),
+	}
+	c.MysqlConfig = mc
 }

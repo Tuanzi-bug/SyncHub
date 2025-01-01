@@ -48,7 +48,7 @@ export const showMsgNotification = (title, msg, $opt = {}) => {
             if (Notification.permission !== status) {
                 Notification.permission = status;
             }
-            // If the user said okay
+            // If the user_proto said okay
             if (status === "granted") {
                 let instance = new Notification(title, options);
                 instance.onclick = function () {

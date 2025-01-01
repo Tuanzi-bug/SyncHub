@@ -1,5 +1,5 @@
 server:
-  name: "project-user"
+  name: "project-user_proto"
   addr: "0.0.0.0:8080"
 zap:
   debugFileName: "/logs/debug/project-debug.log"
@@ -15,7 +15,7 @@ redis:
   db: 0
 grpc:
   addr: "0.0.0.0:8881"
-  name: "user"
+  name: "user_proto"
   version: "1.0.0"
   weight: 2
 etcd:

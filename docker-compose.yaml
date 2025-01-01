@@ -178,8 +178,8 @@ services:
     volumes:
       - '${MINIO_DIR}/data:/data'
 #  Project-User:
-#    container_name: menu-user
-#    image: menu-user:latest
+#    container_name: menu-user_proto
+#    image: menu-user_proto:latest
 #    ports:
 #      - 8080:8080
 #      - 8881:8881

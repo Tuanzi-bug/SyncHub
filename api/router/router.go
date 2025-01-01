@@ -13,7 +13,7 @@ var routers []Router
 
 func InitRouter(r *gin.Engine) {
 	//rg := New()
-	//rg.Route(&user.RouterUser{}, r)
+	//rg.Route(&user_proto.RouterUser{}, r)
 	for _, ro := range routers {
 		ro.Route(r)
 	}

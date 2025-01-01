@@ -60,25 +60,25 @@ const router = new Router({
                 {
                     path: 'login',
                     name: 'login',
-                    component: () => import(/* webpackChunkName: "user" */ '@/views/member/login'),
+                    component: () => import(/* webpackChunkName: "user_proto" */ '@/views/member/login'),
                     meta: {model: 'Login'},
                 },
                 {
                     path: 'register',
                     name: 'register',
-                    component: () => import(/* webpackChunkName: "user" */ '@/views/member/Register'),
+                    component: () => import(/* webpackChunkName: "user_proto" */ '@/views/member/Register'),
                     meta: {model: 'Login'},
                 },
                 {
                     path: 'forgot',
                     name: 'forgot',
-                    component: () => import(/* webpackChunkName: "user" */ '@/views/member/forgot'),
+                    component: () => import(/* webpackChunkName: "user_proto" */ '@/views/member/forgot'),
                     meta: {model: 'Login'},
                 },
                 // {
                 //     path: 'register-result',
                 //     name: 'registerResult',
-                //     component: () => import(/* webpackChunkName: "user" */ '@/views/member/RegisterResult')
+                //     component: () => import(/* webpackChunkName: "user_proto" */ '@/views/member/RegisterResult')
                 // }
             ]
         },

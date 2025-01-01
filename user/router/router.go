@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/discovery"
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
+	"github.com/Tuanzi-bug/SyncHub/grpc/user/login"
 	"github.com/Tuanzi-bug/SyncHub/user/config"
 	loginServiceV1 "github.com/Tuanzi-bug/SyncHub/user/pkg/service/login.service.v1"
 	"github.com/gin-gonic/gin"
@@ -42,7 +43,7 @@ func RegisterGrpc() *grpc.Server {
 	c := gRPCConfig{
 		Addr: config.AppConfig.GrpcConfig.Addr,
 		RegisterFunc: func(server *grpc.Server) {
-			loginServiceV1.RegisterLoginServiceServer(server, loginServiceV1.New())
+			login.RegisterLoginServiceServer(server, loginServiceV1.New())
 		},
 	}
 	server := grpc.NewServer()

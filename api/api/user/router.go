@@ -10,7 +10,7 @@ type RouterUser struct {
 }
 
 func init() {
-	log.Println("init user router")
+	log.Println("init user_proto router")
 	ru := &RouterUser{}
 	router.Register(ru)
 }
@@ -20,4 +20,5 @@ func (*RouterUser) Route(r *gin.Engine) {
 	InitRpcUserClient()
 	h := New()
 	r.POST("/project/login/getCaptcha", h.getCaptcha)
+	r.POST("/project/login/register", h.Register)
 }

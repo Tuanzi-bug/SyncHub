@@ -34,7 +34,7 @@ func InitConfig() *Config {
 	workDir, _ := os.Getwd()
 	conf.viper.SetConfigName("config")
 	conf.viper.SetConfigType("yaml")
-	conf.viper.AddConfigPath("/etc/ms_project/user")
+	conf.viper.AddConfigPath("/etc/ms_project/user_proto")
 	conf.viper.AddConfigPath(workDir + "/config")
 	err := conf.viper.ReadInConfig()
 	if err != nil {
