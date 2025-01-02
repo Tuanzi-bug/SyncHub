@@ -49,3 +49,8 @@ func (m *MemberDao) GetMemberByMobile(ctx context.Context, mobile string) (bool,
 	err := m.conn.Session(ctx).Model(&member.Member{}).Where("mobile=?", mobile).Count(&count).Error
 	return count > 0, err
 }
+
+func (m *MemberDao) FindMemberById(ctx context.Context, id int64) (mem *member.Member, err error) {
+	err = m.conn.Session(ctx).Where("id=?", id).First(&mem).Error
+	return
+}

@@ -1,0 +1,34 @@
+server:
+  name: "project-project_proto"
+  addr: "192.168.1.1:9082"
+zap:
+  debugFileName: ".\\logs\\debug\\project-debug.log"
+  infoFileName: ".\\logs\\info\\project-info.log"
+  warnFileName: ".\\logs\\error\\project-error.log"
+  maxSize: 500,
+  maxAge: 28,
+  MaxBackups: 3
+redis:
+  host: "192.168.1.3"
+  port: 6379
+  password: ""
+  db: 0
+grpc:
+  addr: "192.168.1.1:9002"
+  name: "project_proto"
+  version: "1.0.0"
+  weight: 2
+etcd:
+  addrs:
+    - "192.168.1.3:2379"
+mysql:
+  username: root
+  password: root
+  host: 192.168.1.3
+  port: 3309
+  db: msproject
+jwt:
+  accessExp: 7
+  refreshExp: 14
+  accessSecret: msproject
+  refreshSecret: ms_project

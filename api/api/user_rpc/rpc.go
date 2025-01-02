@@ -1,4 +1,4 @@
-package user
+package user_rpc
 
 import (
 	"github.com/Tuanzi-bug/SyncHub/api/config"

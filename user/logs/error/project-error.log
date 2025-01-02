@@ -2,3 +2,4 @@
 {"level":"ERROR","time":"2025-01-01T21:22:47.874+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
 {"level":"ERROR","time":"2025-01-01T21:22:50.557+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
 {"level":"ERROR","time":"2025-01-01T21:24:53.935+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
+{"level":"ERROR","time":"2025-01-01T22:25:32.666+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
