@@ -7,6 +7,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
 	"github.com/Tuanzi-bug/SyncHub/common/errs"
 	"github.com/Tuanzi-bug/SyncHub/common/jwts"
+	"github.com/Tuanzi-bug/SyncHub/common/tms"
 	"github.com/Tuanzi-bug/SyncHub/grpc/user/login"
 	"github.com/Tuanzi-bug/SyncHub/user/config"
 	"github.com/Tuanzi-bug/SyncHub/user/internal/dao"
@@ -158,6 +159,8 @@ func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*log
 	memMsg := &login.MemberMessage{}
 	err = copier.Copy(memMsg, mem)
 	memMsg.Code, _ = encrypts.EncryptInt64(mem.Id, model.AESKey)
+	memMsg.LastLoginTime = tms.FormatByMill(mem.LastLoginTime)
+	memMsg.CreateTime = tms.FormatByMill(mem.CreateTime)
 	//2.根据用户id查组织
 	orgs, err := h.organizationRepo.FindOrganizationByMemId(c, mem.Id)
 	if err != nil {
@@ -168,6 +171,12 @@ func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*log
 	err = copier.Copy(&orgsMessage, orgs)
 	for _, v := range orgsMessage {
 		v.Code, _ = encrypts.EncryptInt64(v.Id, model.AESKey)
+		v.OwnerCode = memMsg.Code
+		o := organization.ToMap(orgs)[v.Id]
+		v.CreateTime = tms.FormatByMill(o.CreateTime)
+	}
+	if len(orgs) > 0 {
+		memMsg.OrganizationCode, _ = encrypts.EncryptInt64(orgs[0].Id, model.AESKey)
 	}
 	//3.用jwt生成token
 	memIdStr := strconv.FormatInt(mem.Id, 10)

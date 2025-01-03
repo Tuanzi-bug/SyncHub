@@ -4,10 +4,12 @@ import (
 	"context"
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
 	"github.com/Tuanzi-bug/SyncHub/common/errs"
+	"github.com/Tuanzi-bug/SyncHub/common/tms"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/dao"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/database/tran"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/menu"
+	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/pro"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/repo"
 	"github.com/Tuanzi-bug/SyncHub/project/pkg/model"
 	"github.com/Tuanzi-bug/SyncHub/user/pkg/grpc_errs"
@@ -60,6 +62,13 @@ func (p *ProjectService) FindProjectByMemId(ctx context.Context, msg *project.Pr
 	copier.Copy(&pmm, pms)
 	for _, v := range pmm {
 		v.Code, _ = encrypts.EncryptInt64(v.Id, model.AESKey)
+		pam := pro.ToMap(pms)[v.Id]
+		v.AccessControlType = pam.GetAccessControlType()
+		v.OrganizationCode, _ = encrypts.EncryptInt64(pam.OrganizationCode, model.AESKey)
+		v.JoinTime = tms.FormatByMill(pam.JoinTime)
+		v.OwnerName = msg.MemberName
+		v.Order = int32(pam.Sort)
+		v.CreateTime = tms.FormatByMill(pam.CreateTime)
 	}
 	return &project.MyProjectResponse{Pm: pmm, Total: total}, nil
 }

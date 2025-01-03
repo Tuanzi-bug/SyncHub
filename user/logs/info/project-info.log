@@ -3,3 +3,6 @@
 {"level":"ERROR","time":"2025-01-01T21:22:50.557+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
 {"level":"ERROR","time":"2025-01-01T21:24:53.935+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
 {"level":"ERROR","time":"2025-01-01T22:25:32.666+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
+{"level":"ERROR","time":"2025-01-02T20:13:56.224+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
+{"level":"ERROR","time":"2025-01-02T21:15:23.115+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
+{"level":"ERROR","time":"2025-01-03T15:28:00.199+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
