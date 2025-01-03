@@ -236,3 +236,27 @@ func (h *LoginService) MyOrgList(ctx context.Context, msg *login.UserMessage) (*
 	}
 	return &login.OrgListResponse{OrganizationList: orgsMessage}, nil
 }
+
+// FindMemInfoById 根据用户id查用户信息和组织信息
+func (h *LoginService) FindMemInfoById(ctx context.Context, msg *login.UserMessage) (*login.MemberMessage, error) {
+	// 根据用户id查用户信息
+	memberById, err := h.memberRepo.FindMemberById(ctx, msg.MemId)
+	if err != nil {
+		zap.L().Error("TokenVerify db FindMemberById error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	memMsg := &login.MemberMessage{}
+	copier.Copy(memMsg, memberById)
+	memMsg.Code, _ = encrypts.EncryptInt64(memberById.Id, model.AESKey)
+	// 根据用户id查组织
+	orgs, err := h.organizationRepo.FindOrganizationByMemId(ctx, memberById.Id)
+	if err != nil {
+		zap.L().Error("TokenVerify db FindMember error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if len(orgs) > 0 {
+		memMsg.OrganizationCode, _ = encrypts.EncryptInt64(orgs[0].Id, model.AESKey)
+	}
+	memMsg.CreateTime = tms.FormatByMill(memberById.CreateTime)
+	return memMsg, nil
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
 	"github.com/Tuanzi-bug/SyncHub/project/config"
+	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
 	project_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/project.service.v1"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -86,4 +87,8 @@ func RegisterEtcdServer() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func InitUserRpc() {
+	rpc.InitRpcUserClient()
 }
