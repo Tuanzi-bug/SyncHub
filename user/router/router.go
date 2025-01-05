@@ -5,6 +5,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
 	"github.com/Tuanzi-bug/SyncHub/grpc/user/login"
 	"github.com/Tuanzi-bug/SyncHub/user/config"
+	"github.com/Tuanzi-bug/SyncHub/user/internal/interceptor"
 	loginServiceV1 "github.com/Tuanzi-bug/SyncHub/user/pkg/service/login.service.v1"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -46,7 +47,8 @@ func RegisterGrpc() *grpc.Server {
 			login.RegisterLoginServiceServer(server, loginServiceV1.New())
 		},
 	}
-	server := grpc.NewServer()
+	cacheInterceptor := interceptor.New()
+	server := grpc.NewServer(cacheInterceptor.Cache())
 	c.RegisterFunc(server)
 	lis, err := net.Listen("tcp", config.AppConfig.GrpcConfig.Addr)
 	if err != nil {

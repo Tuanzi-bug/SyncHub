@@ -2,6 +2,7 @@ package login_service_v1
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/Tuanzi-bug/SyncHub/common"
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
@@ -189,6 +190,13 @@ func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*log
 		AccessTokenExp: token.AccessExp,
 		TokenType:      "bearer",
 	}
+	// 优化：放入缓存 member orgs
+	go func() {
+		marshal, _ := json.Marshal(mem)
+		h.cache.Put(c, model.Member+"::"+memIdStr, string(marshal), exp)
+		orgsJson, _ := json.Marshal(orgs)
+		h.cache.Put(c, model.MemberOrganization+"::"+memIdStr, string(orgsJson), exp)
+	}()
 	return &login.LoginResponse{
 		Member:           memMsg,
 		OrganizationList: orgsMessage,
@@ -208,16 +216,38 @@ func (h *LoginService) TokenVerify(ctx context.Context, msg *login.LoginMessage)
 		zap.L().Error("Login  TokenVerify error", zap.Error(err))
 		return nil, errs.GrpcError(grpc_errs.NoLogin)
 	}
-	//数据库查询 优化点 登录之后 应该把用户信息缓存起来
-	id, _ := strconv.ParseInt(parseToken, 10, 64)
-	memberById, err := h.memberRepo.FindMemberById(context.Background(), id)
+	//从缓存中查询 如果没有 直接返回认证失败
+	memJson, err := h.cache.Get(ctx, model.Member+"::"+parseToken)
 	if err != nil {
-		zap.L().Error("TokenVerify db FindMemberById error", zap.Error(err))
-		return nil, errs.GrpcError(grpc_errs.DBError)
+		zap.L().Error("TokenVerify cache get member error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.NoLogin)
 	}
+	if memJson == "" {
+		zap.L().Error("TokenVerify cache get member expire")
+		return nil, errs.GrpcError(grpc_errs.NoLogin)
+	}
+	memberById := &member.Member{}
+	json.Unmarshal([]byte(memJson), memberById)
 	memMsg := &login.MemberMessage{}
 	copier.Copy(memMsg, memberById)
 	memMsg.Code, _ = encrypts.EncryptInt64(memberById.Id, model.AESKey)
+	//数据库查询 优化点 登录之后 应该把用户信息缓存起来
+	orgsJson, err := h.cache.Get(context.Background(), model.MemberOrganization+"::"+parseToken)
+	if err != nil {
+		zap.L().Error("TokenVerify cache get organization error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.NoLogin)
+	}
+	if orgsJson == "" {
+		zap.L().Error("TokenVerify cache get organization expire")
+		return nil, errs.GrpcError(grpc_errs.NoLogin)
+	}
+	var orgs []*organization.Organization
+	json.Unmarshal([]byte(orgsJson), &orgs)
+
+	if len(orgs) > 0 {
+		memMsg.OrganizationCode, _ = encrypts.EncryptInt64(orgs[0].Id, model.AESKey)
+	}
+	memMsg.CreateTime = tms.FormatByMill(memberById.CreateTime)
 	return &login.LoginResponse{Member: memMsg}, nil
 }
 

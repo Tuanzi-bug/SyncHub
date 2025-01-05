@@ -5,6 +5,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
 	"github.com/Tuanzi-bug/SyncHub/project/config"
+	"github.com/Tuanzi-bug/SyncHub/project/internal/interceptor"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
 	project_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/project.service.v1"
 	"github.com/gin-gonic/gin"
@@ -55,7 +56,7 @@ func RegisterGrpc() *grpc.Server {
 		RegisterFunc: func(g *grpc.Server) {
 			project.RegisterProjectServiceServer(g, project_service_v1.New())
 		}}
-	s := grpc.NewServer()
+	s := grpc.NewServer(interceptor.New().Cache())
 	c.RegisterFunc(s)
 	lis, err := net.Listen("tcp", c.Addr)
 	if err != nil {
