@@ -290,3 +290,28 @@ func (h *LoginService) FindMemInfoById(ctx context.Context, msg *login.UserMessa
 	memMsg.CreateTime = tms.FormatByMill(memberById.CreateTime)
 	return memMsg, nil
 }
+
+func (h *LoginService) FindMemInfoByIds(ctx context.Context, msg *login.UserMessage) (*login.MemberMessageList, error) {
+	// 根据用户id列表查用户信息
+	memberList, err := h.memberRepo.FindMemberByIds(ctx, msg.MIds)
+	if err != nil {
+		zap.L().Error("FindMemInfoByIds db memberRepo.FindMemberByIds error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if memberList == nil || len(memberList) <= 0 {
+		return &login.MemberMessageList{List: nil}, nil
+	}
+	// todo: 脱了裤子放屁的感觉：处理返回信息
+	mMap := make(map[int64]*member.Member)
+	for _, v := range memberList {
+		mMap[v.Id] = v
+	}
+	var memMsgs []*login.MemberMessage
+	copier.Copy(&memMsgs, memberList)
+	for _, v := range memMsgs {
+		m := mMap[v.Id]
+		v.CreateTime = tms.FormatByMill(m.CreateTime)
+		v.Code = encrypts.EncryptNoErr(v.Id)
+	}
+	return &login.MemberMessageList{List: memMsgs}, nil
+}

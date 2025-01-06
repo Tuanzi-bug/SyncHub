@@ -3,7 +3,6 @@ package pro
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
 	"github.com/Tuanzi-bug/SyncHub/common/tms"
-	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/task"
 	"github.com/Tuanzi-bug/SyncHub/project/pkg/model"
 )
 
@@ -129,7 +128,7 @@ type ProjectTemplateAll struct {
 	Cover            string
 	MemberCode       string
 	IsSystem         int
-	TaskStages       []*task.TaskStagesOnlyName
+	TaskStages       []*TaskStagesOnlyName
 	Code             string
 }
 
@@ -145,7 +144,7 @@ func ToProjectTemplateIds(pts []ProjectTemplate) []int {
 	return ids
 }
 
-func (pt ProjectTemplate) Convert(taskStages []*task.TaskStagesOnlyName) *ProjectTemplateAll {
+func (pt ProjectTemplate) Convert(taskStages []*TaskStagesOnlyName) *ProjectTemplateAll {
 	organizationCode, _ := encrypts.EncryptInt64(pt.OrganizationCode, model.AESKey)
 	memberCode, _ := encrypts.EncryptInt64(pt.MemberCode, model.AESKey)
 	code, _ := encrypts.EncryptInt64(int64(pt.Id), model.AESKey)
@@ -163,4 +162,12 @@ func (pt ProjectTemplate) Convert(taskStages []*task.TaskStagesOnlyName) *Projec
 		Code:             code,
 	}
 	return pta
+}
+
+func ToProjectMap(list []*Project) map[int64]*Project {
+	m := make(map[int64]*Project, len(list))
+	for _, v := range list {
+		m[v.Id] = v
+	}
+	return m
 }

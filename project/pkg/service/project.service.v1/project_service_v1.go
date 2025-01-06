@@ -31,6 +31,7 @@ type ProjectService struct {
 	projectRepo            repo.ProjectRepo
 	projectTemplateRepo    repo.ProjectTemplateRepo
 	taskStagesTemplateRepo repo.TaskStagesTemplateRepo
+	taskStagesRepo         repo.TaskStagesRepo
 }
 
 func New() *ProjectService {
@@ -41,6 +42,7 @@ func New() *ProjectService {
 		projectRepo:            dao.NewProjectDao(),
 		projectTemplateRepo:    dao.NewProjectTemplateDao(),
 		taskStagesTemplateRepo: dao.NewTaskStagesTemplateDao(),
+		taskStagesRepo:         dao.NewTaskStagesDao(),
 	}
 }
 
@@ -151,7 +153,7 @@ func (p *ProjectService) FindProjectTemplate(ctx context.Context, msg *project.P
 	var ptas []*pro.ProjectTemplateAll
 	for _, v := range pts {
 		//写代码 该谁做的事情一定要交出去
-		ptas = append(ptas, v.Convert(task.CovertProjectMap(tsts)[v.Id]))
+		ptas = append(ptas, v.Convert(pro.CovertProjectMap(tsts)[v.Id]))
 	}
 	//3.组装数据
 	var pmMsgs []*project.ProjectTemplateMessage
@@ -165,6 +167,12 @@ func (p *ProjectService) SaveProject(ctx context.Context, msg *project.ProjectRp
 	templateCodeStr, _ := encrypts.Decrypt(msg.TemplateCode, model.AESKey)
 	templateCode, _ := strconv.ParseInt(templateCodeStr, 10, 64)
 
+	// 获取项目模板的任务步骤
+	stageTemplateList, err := p.taskStagesTemplateRepo.FindByProjectTemplateId(ctx, int(templateCode))
+	if err != nil {
+		zap.L().Error("project SaveProject taskStagesTemplateRepo.FindByProjectTemplateId error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
 	//1. 构造数据,保存项目表
 	pr := &pro.Project{
 		Name:              msg.Name,
@@ -179,7 +187,7 @@ func (p *ProjectService) SaveProject(ctx context.Context, msg *project.ProjectRp
 		TaskBoardTheme:    model.Simple,
 	}
 	// 2.保存项目表，事务：保存项目表，保存项目成员表
-	err := p.transaction.Action(func(conn database.DbConn) error {
+	err = p.transaction.Action(func(conn database.DbConn) error {
 		err := p.projectRepo.SaveProject(conn, ctx, pr)
 		if err != nil {
 			zap.L().Error("project SaveProject SaveProject error", zap.Error(err))
@@ -197,6 +205,22 @@ func (p *ProjectService) SaveProject(ctx context.Context, msg *project.ProjectRp
 		if err != nil {
 			zap.L().Error("project SaveProject SaveProjectMember error", zap.Error(err))
 			return errs.GrpcError(grpc_errs.DBError)
+		}
+		//3. 生成任务的步骤
+		for index, v := range stageTemplateList {
+			taskStage := &task.TaskStages{
+				ProjectCode: pr.Id,
+				Name:        v.Name,
+				Sort:        index + 1,
+				Description: "",
+				CreateTime:  time.Now().UnixMilli(),
+				Deleted:     model.NoDeleted,
+			}
+			err := p.taskStagesRepo.SaveTaskStages(ctx, conn, taskStage)
+			if err != nil {
+				zap.L().Error("project SaveProject taskStagesRepo.SaveTaskStages error", zap.Error(err))
+				return errs.GrpcError(grpc_errs.DBError)
+			}
 		}
 		return nil
 	})

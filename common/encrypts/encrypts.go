@@ -17,6 +17,8 @@ func Md5(str string) string {
 
 var commonIV = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f}
 
+const AESKey = "sdfgyrhgbxcdgryfhgywertd"
+
 func EncryptInt64(id int64, keyText string) (cipherStr string, err error) {
 	idStr := strconv.FormatInt(id, 10)
 	return Encrypt(idStr, keyText)
@@ -37,6 +39,18 @@ func Encrypt(plainText string, keyText string) (cipherStr string, err error) {
 	cipherStr = hex.EncodeToString(cipherByte)
 	return
 }
+
+func EncryptNoErr(id int64) string {
+	str, _ := EncryptInt64(id, AESKey)
+	return str
+}
+
+func DecryptNoErr(cipherStr string) int64 {
+	decrypt, _ := Decrypt(cipherStr, AESKey)
+	parseInt, _ := strconv.ParseInt(decrypt, 10, 64)
+	return parseInt
+}
+
 func Decrypt(cipherStr string, keyText string) (plainText string, err error) {
 	// 转换成字节数据, 方便加密
 	keyByte := []byte(keyText)

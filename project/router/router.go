@@ -4,10 +4,12 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/common/discovery"
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
+	"github.com/Tuanzi-bug/SyncHub/grpc/task"
 	"github.com/Tuanzi-bug/SyncHub/project/config"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/interceptor"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
 	project_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/project.service.v1"
+	task_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/task.service.v1"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
@@ -55,6 +57,7 @@ func RegisterGrpc() *grpc.Server {
 		Addr: config.AppConfig.GrpcConfig.Addr,
 		RegisterFunc: func(g *grpc.Server) {
 			project.RegisterProjectServiceServer(g, project_service_v1.New())
+			task.RegisterTaskServiceServer(g, task_service_v1.New())
 		}}
 	s := grpc.NewServer(interceptor.New().Cache())
 	c.RegisterFunc(s)

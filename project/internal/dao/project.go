@@ -2,14 +2,42 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/database"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/database/gorms"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/pro"
+	"gorm.io/gorm"
 )
 
 type ProjectDao struct {
 	conn *gorms.GormConn
+}
+
+func (p ProjectDao) FindProjectMemberByPid(ctx context.Context, projectCode int64) (list []*pro.ProjectMember, total int64, err error) {
+	session := p.conn.Session(ctx)
+	err = session.Model(&pro.ProjectMember{}).
+		Where("project_code=?", projectCode).
+		Find(&list).Error
+	// todo: 脱裤子放屁
+	err = session.Model(&pro.ProjectMember{}).
+		Where("project_code=?", projectCode).
+		Count(&total).Error
+	return
+}
+
+func (p ProjectDao) FindProjectById(ctx context.Context, projectCode int64) (pj *pro.Project, err error) {
+	err = p.conn.Session(ctx).Where("id=?", projectCode).Find(&pj).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return
+}
+
+func (p ProjectDao) FindProjectByIds(ctx context.Context, pids []int64) (list []*pro.Project, err error) {
+	session := p.conn.Session(ctx)
+	err = session.Model(&pro.Project{}).Where("id in (?)", pids).Find(&list).Error
+	return
 }
 
 func (p ProjectDao) SaveProject(conn database.DbConn, ctx context.Context, pr *pro.Project) error {
