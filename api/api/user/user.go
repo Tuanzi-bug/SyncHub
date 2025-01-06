@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"github.com/Tuanzi-bug/SyncHub/api/api/user_rpc"
-	"github.com/Tuanzi-bug/SyncHub/api/pkg/params"
+	"github.com/Tuanzi-bug/SyncHub/api/pkg/params/user"
 	"github.com/Tuanzi-bug/SyncHub/common"
 	"github.com/Tuanzi-bug/SyncHub/common/errs"
 	"github.com/Tuanzi-bug/SyncHub/grpc/user/login"
@@ -37,7 +37,7 @@ func (*HandlerUser) getCaptcha(ctx *gin.Context) {
 func (u *HandlerUser) Register(c *gin.Context) {
 	result := &common.Result{}
 	// 获取参数
-	var req params.RegisterReq
+	var req user.RegisterReq
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数传递有误"))
 		return
@@ -65,10 +65,19 @@ func (u *HandlerUser) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Success(nil))
 }
 
+// GetIp 获取ip函数
+func GetIp(c *gin.Context) string {
+	ip := c.ClientIP()
+	if ip == "::1" {
+		ip = "127.0.0.1"
+	}
+	return ip
+}
+
 func (u *HandlerUser) login(c *gin.Context) {
 	//1.接收参数 参数模型
 	result := &common.Result{}
-	var req params.LoginReq
+	var req user.LoginReq
 	err := c.ShouldBind(&req)
 	if err != nil {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
@@ -83,13 +92,14 @@ func (u *HandlerUser) login(c *gin.Context) {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "copy有误"))
 		return
 	}
+	msg.Ip = GetIp(c)
 	loginRsp, err := user_rpc.LoginServiceClient.Login(ctx, msg)
 	if err != nil {
 		code, msg := errs.ParseGrpcError(err)
 		c.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
-	rsp := &params.LoginRsp{}
+	rsp := &user.LoginRsp{}
 	err = copier.Copy(rsp, loginRsp)
 	if err != nil {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "copy有误"))
@@ -110,10 +120,10 @@ func (u *HandlerUser) myOrgList(c *gin.Context) {
 		return
 	}
 	if list.OrganizationList == nil {
-		c.JSON(http.StatusOK, result.Success([]*params.OrganizationList{}))
+		c.JSON(http.StatusOK, result.Success([]*user.OrganizationList{}))
 		return
 	}
-	var orgs []*params.OrganizationList
+	var orgs []*user.OrganizationList
 	copier.Copy(&orgs, list.OrganizationList)
 	c.JSON(http.StatusOK, result.Success(orgs))
 }

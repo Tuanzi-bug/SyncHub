@@ -1,4 +1,4 @@
-package task
+package domain
 
 type TaskStages struct {
 	Id          int    `json:"id"`

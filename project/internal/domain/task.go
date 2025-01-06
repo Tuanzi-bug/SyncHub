@@ -1,4 +1,4 @@
-package pro
+package domain
 
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
@@ -151,6 +151,10 @@ type TaskDisplay struct {
 	Code          string
 	CanRead       int
 	Executor      Executor
+	ProjectName   string
+	StageName     string
+	PriText       string
+	StatusText    string
 }
 
 type Executor struct {
@@ -158,6 +162,16 @@ type Executor struct {
 	Avatar string
 	Code   string
 }
+
+const (
+	NoStarted = iota
+	Started
+)
+const (
+	Normal = iota
+	Urgent
+	VeryUrgent
+)
 
 func (t *Task) ToTaskDisplay() *TaskDisplay {
 	td := &TaskDisplay{}

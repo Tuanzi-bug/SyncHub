@@ -11,6 +11,15 @@ import (
 	"time"
 )
 
+// GetIp 获取ip函数
+func GetIp(c *gin.Context) string {
+	ip := c.ClientIP()
+	if ip == "::1" {
+		ip = "127.0.0.1"
+	}
+	return ip
+}
+
 func TokenVerify() func(*gin.Context) {
 	return func(c *gin.Context) {
 		result := &common.Result{}
@@ -19,7 +28,8 @@ func TokenVerify() func(*gin.Context) {
 		//2.调佣user服务进行token认证
 		ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancelFunc()
-		response, err := user_rpc.LoginServiceClient.TokenVerify(ctx, &login.LoginMessage{Token: token})
+		ip := GetIp(c)
+		response, err := user_rpc.LoginServiceClient.TokenVerify(ctx, &login.LoginMessage{Token: token, Ip: ip})
 		if err != nil {
 			code, msg := errs.ParseGrpcError(err)
 			c.JSON(http.StatusOK, result.Fail(code, msg))

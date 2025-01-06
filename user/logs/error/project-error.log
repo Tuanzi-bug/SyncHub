@@ -6,3 +6,15 @@
 {"level":"ERROR","time":"2025-01-02T20:13:56.224+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
 {"level":"ERROR","time":"2025-01-02T21:15:23.115+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"context deadline exceeded"}
 {"level":"ERROR","time":"2025-01-03T15:28:00.199+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
+{"level":"ERROR","time":"2025-01-06T15:44:19.089+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"redis: nil"}
+{"level":"ERROR","time":"2025-01-06T15:44:19.089+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"redis: nil"}
+{"level":"ERROR","time":"2025-01-06T15:44:22.680+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"redis: nil"}
+{"level":"ERROR","time":"2025-01-06T15:44:23.291+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"redis: nil"}
+{"level":"ERROR","time":"2025-01-06T16:59:45.147+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
+{"level":"ERROR","time":"2025-01-06T19:13:34.569+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}
+{"level":"ERROR","time":"2025-01-06T19:56:19.960+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
+{"level":"ERROR","time":"2025-01-06T19:56:20.258+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
+{"level":"ERROR","time":"2025-01-06T19:56:20.259+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
+{"level":"ERROR","time":"2025-01-06T19:58:50.004+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
+{"level":"ERROR","time":"2025-01-06T20:00:51.075+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
+{"level":"ERROR","time":"2025-01-06T20:07:51.857+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"context canceled"}

@@ -50,3 +50,7 @@ const (
 	UnDone = iota
 	Done
 )
+const (
+	NoComment = iota
+	Comment
+)

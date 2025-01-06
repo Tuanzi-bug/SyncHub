@@ -10,8 +10,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/project/internal/dao"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/database"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/database/tran"
-	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/pro"
-	task_data "github.com/Tuanzi-bug/SyncHub/project/internal/domain/task"
+	"github.com/Tuanzi-bug/SyncHub/project/internal/domain"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/repo"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
 	"github.com/Tuanzi-bug/SyncHub/project/pkg/grpc_errs"
@@ -30,6 +29,10 @@ type TaskService struct {
 	taskStagesTemplateRepo repo.TaskStagesTemplateRepo
 	taskStagesRepo         repo.TaskStagesRepo
 	taskRepo               repo.TaskRepo
+	projectLogRepo         repo.ProjectLogRepo
+	taskWorkTimeRepo       repo.TaskWorkTimeRepo
+	fileRepo               repo.FileRepo
+	sourceLinkRepo         repo.SourceLinkRepo
 }
 
 func New() *TaskService {
@@ -41,6 +44,10 @@ func New() *TaskService {
 		taskStagesTemplateRepo: dao.NewTaskStagesTemplateDao(),
 		taskStagesRepo:         dao.NewTaskStagesDao(),
 		taskRepo:               dao.NewTaskDao(),
+		projectLogRepo:         dao.NewProjectLogDao(),
+		taskWorkTimeRepo:       dao.NewTaskWorkTimeDao(),
+		fileRepo:               dao.NewFileDao(),
+		sourceLinkRepo:         dao.NewSourceLinkDao(),
 	}
 }
 
@@ -58,7 +65,7 @@ func (t *TaskService) TaskStages(ctx context.Context, msg *task.TaskReqMessage) 
 	if tsMessages == nil {
 		return &task.TaskStagesResponse{List: tsMessages, Total: 0}, nil
 	}
-	stagesMap := task_data.ToTaskStagesMap(stages)
+	stagesMap := domain.ToTaskStagesMap(stages)
 	for _, v := range tsMessages {
 		taskStages := stagesMap[int(v.Id)]
 		v.Code = encrypts.EncryptNoErr(int64(v.Id))
@@ -82,7 +89,7 @@ func (t *TaskService) MemberProjectList(ctx context.Context, msg *task.TaskReqMe
 
 	//2.拿上用户id列表 去请求用户信息
 	var mIds []int64
-	pmMap := make(map[int64]*pro.ProjectMember)
+	pmMap := make(map[int64]*domain.ProjectMember)
 	for _, v := range projectMembers {
 		mIds = append(mIds, v.MemberCode)
 		pmMap[v.MemberCode] = v
@@ -124,7 +131,7 @@ func (t *TaskService) TaskList(ctx context.Context, msg *task.TaskReqMessage) (*
 		zap.L().Error("project task TaskList FindTaskByStageCode error", zap.Error(err))
 		return nil, errs.GrpcError(grpc_errs.DBError)
 	}
-	var taskDisplayList []*pro.TaskDisplay
+	var taskDisplayList []*domain.TaskDisplay
 	var mIds []int64
 	// 收集用户id，对于隐私任务，需要判断是否有权限查看
 	for _, v := range taskList {
@@ -161,7 +168,7 @@ func (t *TaskService) TaskList(ctx context.Context, msg *task.TaskReqMessage) (*
 	}
 	for _, v := range taskDisplayList {
 		message := memberMap[encrypts.DecryptNoErr(v.AssignTo)]
-		e := pro.Executor{
+		e := domain.Executor{
 			Name:   message.Name,
 			Avatar: message.Avatar,
 		}
@@ -219,7 +226,7 @@ func (t *TaskService) SaveTask(ctx context.Context, msg *task.TaskReqMessage) (*
 	}
 	assignTo := encrypts.DecryptNoErr(msg.AssignTo)
 	// 构造保存任务信息
-	ts := &pro.Task{
+	ts := &domain.Task{
 		Name:        msg.Name,
 		CreateTime:  time.Now().UnixMilli(),
 		CreateBy:    msg.MemberId,
@@ -240,7 +247,7 @@ func (t *TaskService) SaveTask(ctx context.Context, msg *task.TaskReqMessage) (*
 			return errs.GrpcError(grpc_errs.DBError)
 		}
 
-		tm := &pro.TaskMember{
+		tm := &domain.TaskMember{
 			MemberCode: assignTo,
 			TaskCode:   ts.Id,
 			JoinTime:   time.Now().UnixMilli(),
@@ -265,7 +272,7 @@ func (t *TaskService) SaveTask(ctx context.Context, msg *task.TaskReqMessage) (*
 	if err != nil {
 		return nil, err
 	}
-	display.Executor = pro.Executor{
+	display.Executor = domain.Executor{
 		Name:   member.Name,
 		Avatar: member.Avatar,
 		Code:   member.Code,
@@ -372,7 +379,7 @@ func (t *TaskService) resetSort(stageCode int64) error {
 }
 
 func (t *TaskService) MyTaskList(ctx context.Context, msg *task.TaskReqMessage) (*task.MyTaskListResponse, error) {
-	var tsList []*pro.Task
+	var tsList []*domain.Task
 	var err error
 	var total int64
 	// 根据任务类型查询任务列表
@@ -412,7 +419,7 @@ func (t *TaskService) MyTaskList(ctx context.Context, msg *task.TaskReqMessage) 
 	}
 	// 根据多项目id，用户id查询项目信息，用户信息
 	pList, err := t.projectRepo.FindProjectByIds(ctx, pids)
-	projectMap := pro.ToProjectMap(pList)
+	projectMap := domain.ToProjectMap(pList)
 
 	mList, err := rpc.LoginServiceClient.FindMemInfoByIds(ctx, &login.UserMessage{
 		MIds: mids,
@@ -422,7 +429,7 @@ func (t *TaskService) MyTaskList(ctx context.Context, msg *task.TaskReqMessage) 
 		mMap[v.Id] = v
 	}
 	// 构造返回信息
-	var mtdList []*pro.MyTaskDisplay
+	var mtdList []*domain.MyTaskDisplay
 	for _, v := range tsList {
 		memberMessage := mMap[v.AssignTo]
 		name := memberMessage.Name
@@ -433,4 +440,298 @@ func (t *TaskService) MyTaskList(ctx context.Context, msg *task.TaskReqMessage) 
 	var myMsgs []*task.MyTaskMessage
 	copier.Copy(&myMsgs, mtdList)
 	return &task.MyTaskListResponse{List: myMsgs, Total: total}, nil
+}
+
+func (t *TaskService) ReadTask(ctx context.Context, msg *task.TaskReqMessage) (*task.TaskMessage, error) {
+	//根据taskCode查询任务详情 根据任务查询项目详情
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	taskInfo, err := t.taskRepo.FindTaskById(ctx, taskCode)
+	if err != nil {
+		zap.L().Error("project task ReadTask taskRepo FindTaskById error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if taskInfo == nil {
+		return &task.TaskMessage{}, nil
+	}
+	display := taskInfo.ToTaskDisplay()
+	if taskInfo.Private == 1 {
+		//代表隐私模式
+		taskMember, err := t.taskRepo.FindTaskMemberByTaskId(ctx, taskInfo.Id, msg.MemberId)
+		if err != nil {
+			zap.L().Error("project task TaskList taskRepo.FindTaskMemberByTaskId error", zap.Error(err))
+			return nil, errs.GrpcError(grpc_errs.DBError)
+		}
+		if taskMember != nil {
+			display.CanRead = model.CanRead
+		} else {
+			display.CanRead = model.NoCanRead
+		}
+	}
+	// 根据任务查询项目详情
+	pj, err := t.projectRepo.FindProjectById(ctx, taskInfo.ProjectCode)
+	display.ProjectName = pj.Name
+	// 根据任务查询任务步骤详情
+	taskStages, err := t.taskStagesRepo.FindById(ctx, taskInfo.StageCode)
+	display.StageName = taskStages.Name
+	// 查询任务的执行者的成员详情
+	memberMessage, err := rpc.LoginServiceClient.FindMemInfoById(ctx, &login.UserMessage{MemId: taskInfo.AssignTo})
+	if err != nil {
+		zap.L().Error("project task TaskList LoginServiceClient.FindMemInfoById error", zap.Error(err))
+		return nil, err
+	}
+	// 构造返回信息
+	e := domain.Executor{
+		Name:   memberMessage.Name,
+		Avatar: memberMessage.Avatar,
+	}
+	display.Executor = e
+	var taskMessage = &task.TaskMessage{}
+	copier.Copy(taskMessage, display)
+	return taskMessage, nil
+}
+
+func (t *TaskService) ListTaskMember(ctx context.Context, msg *task.TaskReqMessage) (*task.TaskMemberList, error) {
+
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	//查询 task member表
+	taskMemberPage, total, err := t.taskRepo.FindTaskMemberPage(ctx, taskCode, msg.Page, msg.PageSize)
+	if err != nil {
+		zap.L().Error("project task TaskList taskRepo.FindTaskMemberPage error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	var mids []int64
+	for _, v := range taskMemberPage {
+		mids = append(mids, v.MemberCode)
+	}
+	// 根据memberCode去查询用户信息
+	messageList, err := rpc.LoginServiceClient.FindMemInfoByIds(ctx, &login.UserMessage{MIds: mids})
+	mMap := make(map[int64]*login.MemberMessage, len(messageList.List))
+	for _, v := range messageList.List {
+		mMap[v.Id] = v
+	}
+	var taskMemeberMemssages []*task.TaskMemberMessage
+	for _, v := range taskMemberPage {
+		tm := &task.TaskMemberMessage{}
+		tm.Code = encrypts.EncryptNoErr(v.MemberCode)
+		tm.Id = v.Id
+		message := mMap[v.MemberCode]
+		tm.Name = message.Name
+		tm.Avatar = message.Avatar
+		tm.IsExecutor = int32(v.IsExecutor)
+		tm.IsOwner = int32(v.IsOwner)
+		taskMemeberMemssages = append(taskMemeberMemssages, tm)
+	}
+	return &task.TaskMemberList{List: taskMemeberMemssages, Total: total}, nil
+}
+
+func (t *TaskService) TaskLog(ctx context.Context, msg *task.TaskReqMessage) (*task.TaskLogList, error) {
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	all := msg.All
+
+	var list []*domain.ProjectLog
+	var total int64
+	var err error
+	if all == 1 {
+		//显示全部
+		list, total, err = t.projectLogRepo.FindLogByTaskCode(ctx, taskCode, int(msg.Comment))
+	}
+	if all == 0 {
+		//分页
+		list, total, err = t.projectLogRepo.FindLogByTaskCodePage(ctx, taskCode, int(msg.Comment), int(msg.Page), int(msg.PageSize))
+	}
+	if err != nil {
+		zap.L().Error("project task TaskLog projectLogRepo.FindLogByTaskCodePage error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if total == 0 {
+		return &task.TaskLogList{}, nil
+	}
+	// 查询执行者的用户信息
+	var displayList []*domain.ProjectLogDisplay
+	var mIdList []int64
+	for _, v := range list {
+		mIdList = append(mIdList, v.MemberCode)
+	}
+	messageList, err := rpc.LoginServiceClient.FindMemInfoByIds(ctx, &login.UserMessage{MIds: mIdList})
+	mMap := make(map[int64]*login.MemberMessage)
+	for _, v := range messageList.List {
+		mMap[v.Id] = v
+	}
+	for _, v := range list {
+		display := v.ToDisplay()
+		message := mMap[v.MemberCode]
+		m := domain.Member{}
+		m.Name = message.Name
+		m.Id = message.Id
+		m.Avatar = message.Avatar
+		m.Code = message.Code
+		display.Member = m
+		displayList = append(displayList, display)
+	}
+	var l []*task.TaskLog
+	copier.Copy(&l, displayList)
+	return &task.TaskLogList{List: l, Total: total}, nil
+}
+
+func (t *TaskService) TaskWorkTimeList(ctx context.Context, msg *task.TaskReqMessage) (*task.TaskWorkTimeResponse, error) {
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+
+	var list []*domain.TaskWorkTime
+	var err error
+	list, err = t.taskWorkTimeRepo.FindWorkTimeList(ctx, taskCode)
+	if err != nil {
+		zap.L().Error("project task TaskWorkTimeList taskWorkTimeRepo.FindWorkTimeList error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if len(list) == 0 {
+		return &task.TaskWorkTimeResponse{}, nil
+	}
+
+	var displayList []*domain.TaskWorkTimeDisplay
+	var mIdList []int64
+	for _, v := range list {
+		mIdList = append(mIdList, v.MemberCode)
+	}
+	messageList, err := rpc.LoginServiceClient.FindMemInfoByIds(ctx, &login.UserMessage{MIds: mIdList})
+
+	mMap := make(map[int64]*login.MemberMessage)
+	for _, v := range messageList.List {
+		mMap[v.Id] = v
+	}
+	for _, v := range list {
+		display := v.ToDisplay()
+		message := mMap[v.MemberCode]
+		m := domain.Member{}
+		m.Name = message.Name
+		m.Id = message.Id
+		m.Avatar = message.Avatar
+		m.Code = message.Code
+		display.Member = m
+		displayList = append(displayList, display)
+	}
+	var l []*task.TaskWorkTime
+	copier.Copy(&l, displayList)
+	return &task.TaskWorkTimeResponse{List: l, Total: int64(len(l))}, nil
+}
+
+func (t *TaskService) SaveTaskWorkTime(ctx context.Context, msg *task.TaskReqMessage) (*task.SaveTaskWorkTimeResponse, error) {
+	tmt := &domain.TaskWorkTime{}
+	tmt.BeginTime = msg.BeginTime
+	tmt.Num = int(msg.Num)
+	tmt.Content = msg.Content
+	tmt.TaskCode = encrypts.DecryptNoErr(msg.TaskCode)
+	tmt.MemberCode = msg.MemberId
+
+	err := t.taskWorkTimeRepo.Save(ctx, tmt)
+	if err != nil {
+		zap.L().Error("project task SaveTaskWorkTime taskWorkTimeRepo.Save error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	return &task.SaveTaskWorkTimeResponse{}, nil
+}
+
+func (t *TaskService) SaveTaskFile(ctx context.Context, msg *task.TaskFileReqMessage) (*task.TaskFileResponse, error) {
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	//存file表
+	f := &domain.File{
+		PathName:         msg.PathName,
+		Title:            msg.FileName,
+		Extension:        msg.Extension,
+		Size:             int(msg.Size),
+		ObjectType:       "",
+		OrganizationCode: encrypts.DecryptNoErr(msg.OrganizationCode),
+		TaskCode:         encrypts.DecryptNoErr(msg.TaskCode),
+		ProjectCode:      encrypts.DecryptNoErr(msg.ProjectCode),
+		CreateBy:         msg.MemberId,
+		CreateTime:       time.Now().UnixMilli(),
+		Downloads:        0,
+		Extra:            "",
+		Deleted:          model.NoDeleted,
+		FileType:         msg.FileType,
+		FileUrl:          msg.FileUrl,
+		DeletedTime:      0,
+	}
+	err := t.fileRepo.Save(context.Background(), f)
+	if err != nil {
+		zap.L().Error("project task SaveTaskFile fileRepo.Save error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	//存入source_link
+	sl := &domain.SourceLink{
+		SourceType:       "file",
+		SourceCode:       f.Id,
+		LinkType:         "task",
+		LinkCode:         taskCode,
+		OrganizationCode: encrypts.DecryptNoErr(msg.OrganizationCode),
+		CreateBy:         msg.MemberId,
+		CreateTime:       time.Now().UnixMilli(),
+		Sort:             0,
+	}
+	err = t.sourceLinkRepo.Save(context.Background(), sl)
+	if err != nil {
+		zap.L().Error("project task SaveTaskFile sourceLinkRepo.Save error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	return &task.TaskFileResponse{}, nil
+}
+
+func (t *TaskService) TaskSources(ctx context.Context, msg *task.TaskReqMessage) (*task.TaskSourceResponse, error) {
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	// 通过task_code 查询source_link表
+	sourceLinks, err := t.sourceLinkRepo.FindByTaskCode(context.Background(), taskCode)
+	if err != nil {
+		zap.L().Error("project task SaveTaskFile sourceLinkRepo.FindByTaskCode error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	if len(sourceLinks) == 0 {
+		return &task.TaskSourceResponse{}, nil
+	}
+
+	// 查询file表各个信息
+	var fIdList []int64
+	for _, v := range sourceLinks {
+		fIdList = append(fIdList, v.SourceCode)
+	}
+	files, err := t.fileRepo.FindByIds(context.Background(), fIdList)
+	if err != nil {
+		zap.L().Error("project task SaveTaskFile fileRepo.FindByIds error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	// 构造返回信息
+	fMap := make(map[int64]*domain.File)
+	for _, v := range files {
+		fMap[v.Id] = v
+	}
+	var list []*domain.SourceLinkDisplay
+	for _, v := range sourceLinks {
+		list = append(list, v.ToDisplay(fMap[v.SourceCode]))
+	}
+	var slMsg []*task.TaskSourceMessage
+	copier.Copy(&slMsg, list)
+	return &task.TaskSourceResponse{List: slMsg}, nil
+}
+
+func (t *TaskService) CreateComment(ctx context.Context, msg *task.TaskReqMessage) (*task.CreateCommentResponse, error) {
+	taskCode := encrypts.DecryptNoErr(msg.TaskCode)
+	taskById, err := t.taskRepo.FindTaskById(context.Background(), taskCode)
+	if err != nil {
+		zap.L().Error("project task CreateComment fileRepo.FindTaskById error", zap.Error(err))
+		return nil, errs.GrpcError(grpc_errs.DBError)
+	}
+	pl := &domain.ProjectLog{
+		MemberCode:   msg.MemberId,
+		Content:      msg.CommentContent,
+		Remark:       msg.CommentContent,
+		Type:         "createComment",
+		CreateTime:   time.Now().UnixMilli(),
+		SourceCode:   taskCode,
+		ActionType:   "task",
+		ToMemberCode: 0,
+		IsComment:    model.Comment,
+		ProjectCode:  taskById.ProjectCode,
+		Icon:         "plus",
+		IsRobot:      0,
+	}
+	t.projectLogRepo.SaveProjectLog(pl)
+	return &task.CreateCommentResponse{}, nil
 }

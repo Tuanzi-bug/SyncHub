@@ -1,4 +1,4 @@
-package pro
+package domain
 
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/encrypts"
