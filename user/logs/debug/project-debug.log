@@ -18,3 +18,4 @@
 {"level":"ERROR","time":"2025-01-06T19:58:50.004+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
 {"level":"ERROR","time":"2025-01-06T20:00:51.075+0800","caller":"login.service.v1/login_service.go:216","msg":"Login  TokenVerify error","error":"ip不合法"}
 {"level":"ERROR","time":"2025-01-06T20:07:51.857+0800","caller":"login.service.v1/login_service.go:222","msg":"TokenVerify cache get member error","error":"context canceled"}
+{"level":"ERROR","time":"2025-01-07T15:18:34.395+0800","caller":"discovery/discovery.go:126","msg":"register keepAliveCh failed","error":"etcdserver: requested lease not found"}

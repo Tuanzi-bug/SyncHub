@@ -3,11 +3,17 @@ package router
 import (
 	"github.com/Tuanzi-bug/SyncHub/common/discovery"
 	"github.com/Tuanzi-bug/SyncHub/common/logs"
+	"github.com/Tuanzi-bug/SyncHub/grpc/account"
+	"github.com/Tuanzi-bug/SyncHub/grpc/auth"
+	"github.com/Tuanzi-bug/SyncHub/grpc/department"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
 	"github.com/Tuanzi-bug/SyncHub/grpc/task"
 	"github.com/Tuanzi-bug/SyncHub/project/config"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/interceptor"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
+	account_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/account.service.v1"
+	auth_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/auth.service.v1"
+	department_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/department.service.v1"
 	project_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/project.service.v1"
 	task_service_v1 "github.com/Tuanzi-bug/SyncHub/project/pkg/service/task.service.v1"
 	"github.com/gin-gonic/gin"
@@ -58,6 +64,9 @@ func RegisterGrpc() *grpc.Server {
 		RegisterFunc: func(g *grpc.Server) {
 			project.RegisterProjectServiceServer(g, project_service_v1.New())
 			task.RegisterTaskServiceServer(g, task_service_v1.New())
+			account.RegisterAccountServiceServer(g, account_service_v1.New())
+			auth.RegisterAuthServiceServer(g, auth_service_v1.New())
+			department.RegisterDepartmentServiceServer(g, department_service_v1.New())
 		}}
 	s := grpc.NewServer(interceptor.New().Cache())
 	c.RegisterFunc(s)
