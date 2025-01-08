@@ -13,6 +13,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/project/internal/domain"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/domain/menu"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/repo"
+	"github.com/Tuanzi-bug/SyncHub/project/internal/repository"
 	"github.com/Tuanzi-bug/SyncHub/project/internal/rpc"
 	"github.com/Tuanzi-bug/SyncHub/project/pkg/model"
 	"github.com/Tuanzi-bug/SyncHub/user/pkg/grpc_errs"
@@ -31,6 +32,7 @@ type ProjectService struct {
 	projectTemplateRepo    repo.ProjectTemplateRepo
 	taskStagesTemplateRepo repo.TaskStagesTemplateRepo
 	taskStagesRepo         repo.TaskStagesRepo
+	nodeDomain             *repository.ProjectNodeDomain
 }
 
 func New() *ProjectService {
@@ -42,6 +44,7 @@ func New() *ProjectService {
 		projectTemplateRepo:    dao.NewProjectTemplateDao(),
 		taskStagesTemplateRepo: dao.NewTaskStagesTemplateDao(),
 		taskStagesRepo:         dao.NewTaskStagesDao(),
+		nodeDomain:             repository.NewProjectNodeDomain(),
 	}
 }
 
@@ -341,4 +344,14 @@ func (p *ProjectService) UpdateDeletedProject(ctx context.Context, msg *project.
 		return nil, errs.GrpcError(grpc_errs.DBError)
 	}
 	return &project.DeletedProjectResponse{}, nil
+}
+
+func (p *ProjectService) NodeList(ctx context.Context, msg *project.ProjectRpcMessage) (*project.ProjectNodeResponseMessage, error) {
+	list, err := p.nodeDomain.TreeList()
+	if err != nil {
+		return nil, errs.GrpcError(err)
+	}
+	var nodes []*project.ProjectNodeMessage
+	copier.Copy(&nodes, list)
+	return &project.ProjectNodeResponseMessage{Nodes: nodes}, nil
 }

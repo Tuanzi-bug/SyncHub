@@ -6,6 +6,7 @@ import (
 	"github.com/Tuanzi-bug/SyncHub/grpc/account"
 	"github.com/Tuanzi-bug/SyncHub/grpc/auth"
 	"github.com/Tuanzi-bug/SyncHub/grpc/department"
+	"github.com/Tuanzi-bug/SyncHub/grpc/menu"
 	"github.com/Tuanzi-bug/SyncHub/grpc/project"
 	"github.com/Tuanzi-bug/SyncHub/grpc/task"
 	"github.com/Tuanzi-bug/SyncHub/project/config"
@@ -20,6 +21,7 @@ var TaskServiceClient task.TaskServiceClient
 var AccountServiceClient account.AccountServiceClient
 var DepartmentServiceClient department.DepartmentServiceClient
 var AuthServiceClient auth.AuthServiceClient
+var MenuServiceClient menu.MenuServiceClient
 
 func InitRpcProjectClient() {
 	etcdRegister := discovery.NewResolver(config.AppConfig.EtcdConfig.Addrs, logs.LG)
@@ -34,4 +36,5 @@ func InitRpcProjectClient() {
 	AccountServiceClient = account.NewAccountServiceClient(conn)
 	DepartmentServiceClient = department.NewDepartmentServiceClient(conn)
 	AuthServiceClient = auth.NewAuthServiceClient(conn)
+	MenuServiceClient = menu.NewMenuServiceClient(conn)
 }

@@ -122,6 +122,7 @@ message ProjectRpcMessage{
   string projectCode = 12;
   bool deleted = 13;
   string collectType = 14;
+  string taskCode = 15;
 }
 
 message ProjectTemplateMessage{
@@ -171,7 +172,41 @@ message UpdateProjectMessage{
   int32 AutoUpdateSchedule = 12;
   int64 MemberId = 13;
 }
+message ProjectLogMessage{
+  string Content  = 1;
+  string Remark       = 2;
+  string CreateTime    = 3;
+  string SourceCode    = 4;
+  int32 IsComment       = 5;
+  string ProjectCode   = 6;
+  string ProjectName   =7;
+  string MemberAvatar  =8;
+  string MemberName   =9;
+  string TaskName      = 10;
+}
+message ProjectLogResponse{
+  repeated ProjectLogMessage list = 1;
+  int64 total = 2;
+}
 
+message ProjectNodeMessage{
+  int64 id = 1;
+  string node = 2;
+  string title = 3;
+  string pnode = 4;
+  int32 isLogin = 5;
+  int32 isMenu = 6;
+  int32 isAuth = 7;
+  repeated ProjectNodeMessage children = 8;
+}
+message ProjectNodeResponseMessage {
+  repeated ProjectNodeMessage nodes = 1;
+}
+message FindProjectByMemberIdResponse{
+  ProjectMessage project = 1;
+  bool isMember = 2;
+  bool isOwner = 3;
+}
 service ProjectService {
   rpc Index(IndexMessage) returns (IndexResponse) {}
   rpc FindProjectByMemId(ProjectRpcMessage) returns (MyProjectResponse){}
@@ -181,4 +216,7 @@ service ProjectService {
   rpc UpdateDeletedProject(ProjectRpcMessage) returns (DeletedProjectResponse){}
   rpc UpdateCollectProject(ProjectRpcMessage) returns (CollectProjectResponse){}
   rpc UpdateProject(UpdateProjectMessage) returns (UpdateProjectResponse){}
+  rpc GetLogBySelfProject(ProjectRpcMessage) returns (ProjectLogResponse){}
+  rpc NodeList(ProjectRpcMessage) returns (ProjectNodeResponseMessage){}
+  rpc FindProjectByMemberId(ProjectRpcMessage) returns (FindProjectByMemberIdResponse){}
 }
